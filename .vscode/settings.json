@@ -1,0 +1,7 @@
+{
+    "python.pythonPath": "/home/viveky/anaconda3/envs/PyTorch/bin/python",
+    "python.linting.pylintArgs": [
+        "--errors-only",
+        "--generated-members=numpy.* ,torch.* ,cv2.* , cv.*"
+        ]
+}
