@@ -92,13 +92,13 @@ def main(dataset, path):
 
         lr_schedule.step(valLoss)
 
-import os.path as path
+import os.path
 
 if __name__ == "__main__":
-    ask = input("Which dataset would you like to use?").lower()
+    ask = input("Which dataset would you like to use? ").lower()
     dataset = setDataset(ask)
     path = "nr_" + ask + ".pt"
-    if path.exists(path):
+    if os.path.exists(path):
         answer = input("You already have a %s model, would you like to overwrite? (Y/N)" % ask)
         if answer == 'y' or 'Y':
             main(dataset, path)
