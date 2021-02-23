@@ -42,11 +42,9 @@ class ADDA():
         self.discriminator = nn.Sequential(
             nn.Linear(1024, 500),
             nn.ReLU(),
-            nn.Linear(500, 100),
+            nn.Linear(500, 500),
             nn.ReLU(),
-            nn.Linear(100, 40),
-            nn.ReLU(),
-            nn.Linear(40, 1)
+            nn.Linear(500, 1)
         ).to(self.device)
 
         self.discrimOptim = optim.Adam(self.discriminator.parameters())
@@ -89,17 +87,17 @@ class ADDA():
 
         return sourceDL, targetDL, evalDL
 
-    def doEpoch(self, epoch):
+    def doEpoch(self, epoch, dataloaders):
         if self.successfulLoad == False:
             return
 
-        (sourceDL, targetDL, evalDL) = self.makeDataLoaders()
+        (sourceDL, targetDL, evalDL) = dataloaders
         source_iter = cycle(sourceDL)
         target_iter = cycle(targetDL)
 
         loss_counter = 0
         accuracy_counter = 0
-        for _ in tqdm(range(200), leave=False):
+        for _ in tqdm(range(500), leave=False):
             setRequiresGrad(self.targetNet, False)
             setRequiresGrad(self.discriminator, True)
 
@@ -129,7 +127,7 @@ class ADDA():
             #Train target CNN 10 times for every time you train the discriminator
             setRequiresGrad(self.targetNet, True)
             setRequiresGrad(self.discriminator, False)
-            for _ in range(7):
+            for _ in range(10):
                 (target_x, _) = next(target_iter)
                 target_x = target_x.to(self.device)
                 
@@ -145,8 +143,8 @@ class ADDA():
                 discrim_loss.backward()
                 self.targetOptim.step()
 
-        mean_loss = loss_counter/200
-        mean_accuracy = accuracy_counter/200
+        mean_loss = loss_counter/500
+        mean_accuracy = accuracy_counter/500
 
         self.finalNet.feature_identifier = self.targetNet
 
@@ -168,7 +166,7 @@ class ADDA():
 if __name__ == "__main__":
     modelPath = input("Please input the path of your source model: ")
     adda = ADDA(modelPath)
-
+    dataloaders = adda.makeDataLoaders()
     for epoch in range(1, 11):
-        adda.doEpoch(epoch=epoch)
+        adda.doEpoch(epoch, dataloaders)
 
