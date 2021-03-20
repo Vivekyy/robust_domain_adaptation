@@ -33,7 +33,7 @@ class ADDA():
             self.successfulLoad = True
         except:
             self.successfulLoad = False
-            print("Bad model path")
+            print("Bad model path [ADDA]")
         
         self.finalNet = sourceNet
         self.sourceNet = sourceNet.feature_identifier
