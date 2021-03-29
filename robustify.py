@@ -1,18 +1,22 @@
 import numpy as np
 import torch
+import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
 import os
+from tqdm import tqdm
 
 from utils import setDevice
+from net import Net
 
 device = setDevice()
 
 #Using norm = infinity
 #alpha = step size
-def attack_pgd(model, X, y, epsilon, alpha, steps):
+def attack_pgd(model, X, y, epsilon=.3, alpha=.01, steps=40):
     
     #delta = change to X
     best_loss = torch.zeros(y.shape[0]).to(device)
@@ -44,13 +48,34 @@ def attack_pgd(model, X, y, epsilon, alpha, steps):
                 best_delta = delta
                 best_loss = loss
         
-    return max_delta
-    
-def runEpoch():
-    #Do stuff
+    return best_delta
 
-def main():
-    #Do stuff
+def robustify(trainData, modelPath="none"):
+    if modelPath == "none":
+        modelPath = input("Please input the model path")
 
-if __name__ == "__main__":
-    main()
+    model = Net().to(device)
+    try:
+        model.load_state_dict(torch.load(modelPath))
+    except:
+        print("Bad model path [robustify]")
+        return
+
+    trainLoader = DataLoader(trainData, batch_size=128, num_workers=1, pin_memory=True)
+
+    model.train()
+    trainOptim = optim.SGD(model.parameters(), lr=.01)
+    loss_type = nn.CrossEntropyLoss()
+
+    epochs = 50
+    for _ in tqdm(epochs):
+        for (X,y) in enumerate(trainLoader):
+            X, y = X.to(device), y.to(device)
+            x_pgd = attack_pgd(model, X, y)
+
+            trainOptim.zero_grad()
+            y_pred = model(x_pgd)
+            loss = loss_type(y_pred, y)
+
+            loss.backward()
+            trainOptim.step()
