@@ -47,6 +47,6 @@ class RelabeledDataset(Dataset):
 
         if self.successfulLoad:
             pred_y = self.model(entry_x.view(-1, 3, 28, 28))
-            entry_y = pred_y.max(1)[1]
+            entry_y = pred_y.max(1)[1].item()
 
         return entry_x, entry_y

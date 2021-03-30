@@ -16,7 +16,7 @@ device = setDevice()
 
 #Using norm = infinity
 #alpha = step size
-def attack_pgd(model, X, y, epsilon=.3, alpha=.01, steps=40):
+def attack_pgd(model, X, y, epsilon=.3, alpha=.01, steps=20):
     
     #delta = change to X
     best_loss = torch.zeros(y.shape[0]).to(device)
@@ -28,28 +28,28 @@ def attack_pgd(model, X, y, epsilon=.3, alpha=.01, steps=40):
 
         #Start delta in a random place within the epsilon ball
         delta.uniform_(-epsilon, epsilon)
-        delta.requires_grad == True
+        delta.requires_grad = True
 
         for _ in range(steps):
             y_pred = model(X+delta)
 
-            print(y)
-            print(y_pred.size())
-            print(y.size())
             loss = F.cross_entropy(y_pred, y)
             loss.backward()
 
             grad = delta.grad.detach()
-            delta = torch.clamp(delta + alpha*torch.sign(grad), min=-epsilon, max=epsilon)
+
+            #Use d to keep delta as a leaf tensor
+            d = delta.clone()
+            d = torch.clamp(d + alpha*torch.sign(grad), min=-epsilon, max=epsilon)
+            delta.data = d
 
             #Avoid messing with gradient
             delta.grad.zero_()
 
             new_loss = F.cross_entropy(model(X+delta), y, reduction="none")
         
-            if(new_loss >= best_loss):
-                best_delta = delta
-                best_loss = loss
+            best_delta[new_loss >= best_loss] = delta.detach()[new_loss >= best_loss]
+            best_loss = torch.max(best_loss, new_loss)
         
     return best_delta
 
