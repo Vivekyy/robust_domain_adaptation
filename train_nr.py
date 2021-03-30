@@ -98,9 +98,9 @@ if __name__ == "__main__":
     ask = input("Which dataset would you like to use? ").lower()
     dataset = setDataset(ask)
     path = "nr_" + ask + ".pt"
-    if os.path.exists(path):
-        answer = input("You already have a %s model, would you like to overwrite? (Y/N)" % ask)
-        if answer == 'y' or 'Y':
+    if os.path.exists("models/" + path):
+        answer = input("You already have a %s model, would you like to overwrite? (Y/N) " % ask)
+        if answer == 'y' or answer == 'Y':
             main(dataset, path)
     else:
         main(dataset, path)

@@ -11,6 +11,7 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from tqdm import tqdm
 import numpy as np
 from itertools import cycle
+import os
 
 from net import Net
 from test import test
@@ -18,7 +19,7 @@ from train_nr import setDataset
 from utils import setDevice, GrayscaleToRgb, setRequiresGrad
 
 class ADDA():
-    def __init__(self, sourceNetPath):
+    def __init__(self, sourceNetPath, robust=False):
 
         self.device = setDevice()
 
@@ -54,6 +55,8 @@ class ADDA():
 
         self.currentAccuracy = 0
 
+        self.robust = robust
+
     def getDatasets(self):
 
         #Get name of dataset from path
@@ -66,10 +69,16 @@ class ADDA():
         targetAsk = input("Please input the name of the dataset you would like to target: ")
         targetDataset = setDataset(targetAsk)
 
-        self.path = sourceAsk + "_to_" + targetAsk + ".pt"
+        if self.robust == False:
+            self.path = sourceAsk + "_to_" + targetAsk + ".pt"
+        else:
+            self.path = sourceAsk + "_to_" + targetAsk + "_robust.pt"
+
+        self.sourceDataset = sourceDataset
+        self.targetDataset = targetDataset
 
         return sourceDataset, targetDataset
-    
+
     def makeDataLoaders(self):
         if self.successfulLoad == False:
             return
@@ -148,7 +157,7 @@ class ADDA():
 
         self.finalNet.feature_identifier = self.targetNet
 
-        print("---Epoch %s Complete---" % epoch)
+        print("---Epoch %s Complete [ADDA]---" % epoch)
         print("Discriminator Loss:", mean_loss)
         print("Discriminator Accuracy:", mean_accuracy)
         print()
@@ -167,6 +176,12 @@ if __name__ == "__main__":
     modelPath = input("Please input the path of your source model: ")
     adda = ADDA(modelPath)
     dataloaders = adda.makeDataLoaders()
-    for epoch in range(1, 11):
-        adda.doEpoch(epoch, dataloaders)
 
+    if os.path.exists("models/" + adda.path):
+        answer = input("You already have a %s model, would you like to overwrite? (Y/N) " % adda.path)
+        if answer == 'y' or answer == 'Y':
+            for epoch in range(1, 11):
+                adda.doEpoch(epoch, dataloaders)
+    else:
+        for epoch in range(1, 11):
+            adda.doEpoch(epoch, dataloaders)

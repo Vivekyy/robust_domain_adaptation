@@ -33,6 +33,9 @@ def attack_pgd(model, X, y, epsilon=.3, alpha=.01, steps=40):
         for _ in range(steps):
             y_pred = model(X+delta)
 
+            print(y)
+            print(y_pred.size())
+            print(y.size())
             loss = F.cross_entropy(y_pred, y)
             loss.backward()
 
@@ -50,26 +53,28 @@ def attack_pgd(model, X, y, epsilon=.3, alpha=.01, steps=40):
         
     return best_delta
 
-def robustify(trainData, modelPath="none"):
-    if modelPath == "none":
+def robustify(trainData, modelPath=None):
+    if modelPath is None:
         modelPath = input("Please input the model path")
 
     model = Net().to(device)
     try:
         model.load_state_dict(torch.load(modelPath))
     except:
-        print("Bad model path [robustify]")
+        print("Bad model path [Robustify]")
         return
 
-    trainLoader = DataLoader(trainData, batch_size=128, num_workers=1, pin_memory=True)
+    trainLoader = DataLoader(trainData, batch_size=50, num_workers=1, pin_memory=True)
 
     model.train()
     trainOptim = optim.SGD(model.parameters(), lr=.01)
     loss_type = nn.CrossEntropyLoss()
 
-    epochs = 50
-    for _ in tqdm(epochs):
-        for (X,y) in enumerate(trainLoader):
+    epochs = 20
+    for epoch in range(epochs):
+        loss_counter = 0
+
+        for (X,y) in tqdm(trainLoader, leave=False):
             X, y = X.to(device), y.to(device)
             x_pgd = attack_pgd(model, X, y)
 
@@ -79,3 +84,11 @@ def robustify(trainData, modelPath="none"):
 
             loss.backward()
             trainOptim.step()
+
+            loss_counter += loss.item()
+
+        meanLoss = loss_counter/len(trainLoader)
+        print("---Epoch %s Complete [PGD]---" % epoch)
+        print("PGD Loss: ", meanLoss)
+    
+    return model
