@@ -111,10 +111,5 @@ def robustify(trainData, modelPath=None, customDataset=True):
             _, valAcc = test(model, evalLoader)
             print("Validation Accuracy: ", valAcc)
             print()
-        
-        if epoch == 5:
-            model_5 = model
-        elif epoch == 10:
-            model_10 = model
     
-    return model_5, model_10, model
+    return model

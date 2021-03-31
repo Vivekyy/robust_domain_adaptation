@@ -32,8 +32,6 @@ if __name__ == "__main__":
     dataPath = dataPath.split('.')[0]
 
     trainData = RelabeledDataset(dataPath, "models/" + ADDApath)
-    model_5, model_10, finalModel = robustify(trainData, modelPath=modelPath)
+    finalModel = robustify(trainData, modelPath=modelPath)
 
-    torch.save(model_5.state_dict(), "models/5_" + ADDApath)
-    torch.save(model_10.state_dict(), "models/10_" + ADDApath)
     torch.save(finalModel.state_dict(), "models/" + ADDApath)
