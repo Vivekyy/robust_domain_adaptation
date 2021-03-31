@@ -19,7 +19,7 @@ from train_nr import setDataset
 from utils import setDevice, GrayscaleToRgb, setRequiresGrad
 
 class ADDA():
-    def __init__(self, sourceNetPath, robust=False):
+    def __init__(self, sourceNetPath, targetAsk = None, robust=False):
 
         self.device = setDevice()
 
@@ -56,6 +56,7 @@ class ADDA():
         self.currentAccuracy = 0
 
         self.robust = robust
+        self.targetAsk = targetAsk
 
     def getDatasets(self):
 
@@ -66,13 +67,14 @@ class ADDA():
 
         sourceDataset = setDataset(sourceAsk)
 
-        targetAsk = input("Please input the name of the dataset you would like to target: ")
-        targetDataset = setDataset(targetAsk)
+        if self.targetAsk is None:
+            self.targetAsk = input("Please input the name of the dataset you would like to target: ")
+        targetDataset = setDataset(self.targetAsk)
 
         if self.robust == False:
-            self.path = sourceAsk + "_to_" + targetAsk + ".pt"
+            self.path = sourceAsk + "_to_" + self.targetAsk + ".pt"
         else:
-            self.path = sourceAsk + "_to_" + targetAsk + "_robust.pt"
+            self.path = sourceAsk + "_to_" + self.targetAsk + "_robust.pt"
 
         self.sourceDataset = sourceDataset
         self.targetDataset = targetDataset
@@ -171,6 +173,20 @@ class ADDA():
             print()
             self.currentAccuracy = valAcc
             torch.save(self.finalNet.state_dict(), "models/" + self.path)
+
+def getPath(sourceNetPath, targetAsk, robust = True):
+
+        #Get name of dataset from path
+        sourceAsk = sourceNetPath
+        sourceAsk = sourceAsk.split('_')[1]
+        sourceAsk = sourceAsk.split('.')[0] 
+
+        if robust == False:
+            path = sourceAsk + "_to_" + targetAsk + ".pt"
+        else:
+            path = sourceAsk + "_to_" + targetAsk + "_robust.pt"
+
+        return path
 
 if __name__ == "__main__":
     modelPath = input("Please input the path of your source model: ")

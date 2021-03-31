@@ -5,14 +5,30 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
+from torch.utils.data.sampler import SubsetRandomSampler
 
 import os
 from tqdm import tqdm
 
 from utils import setDevice
 from net import Net
+from test import test
 
 device = setDevice()
+
+def makeDataLoaders(targetDataset, customDataset=True):
+        randIndeces = np.random.permutation(len(targetDataset))
+        trainIndeces = randIndeces[:int(.8*len(targetDataset))]
+        valIndeces = randIndeces[int(.8*len(targetDataset)):]
+
+        if customDataset:
+            targetDL = DataLoader(targetDataset, batch_size=50, sampler=SubsetRandomSampler(trainIndeces), num_workers=0, pin_memory=True)
+            evalDL = DataLoader(targetDataset, batch_size=50, sampler=SubsetRandomSampler(valIndeces), num_workers=0, pin_memory=True)
+        else:
+            targetDL = DataLoader(targetDataset, batch_size=50, sampler=SubsetRandomSampler(trainIndeces), num_workers=1, pin_memory=True)
+            evalDL = DataLoader(targetDataset, batch_size=50, sampler=SubsetRandomSampler(valIndeces), num_workers=1, pin_memory=True)
+
+        return targetDL, evalDL
 
 #Using norm = infinity
 #alpha = step size
@@ -53,7 +69,7 @@ def attack_pgd(model, X, y, epsilon=.3, alpha=.01, steps=20):
         
     return best_delta
 
-def robustify(trainData, modelPath=None):
+def robustify(trainData, modelPath=None, customDataset=True):
     if modelPath is None:
         modelPath = input("Please input the model path")
 
@@ -64,14 +80,14 @@ def robustify(trainData, modelPath=None):
         print("Bad model path [Robustify]")
         return
 
-    trainLoader = DataLoader(trainData, batch_size=50, num_workers=0, pin_memory=True)
+    trainLoader, evalLoader = makeDataLoaders(trainData, customDataset)
 
     model.train()
     trainOptim = optim.SGD(model.parameters(), lr=.01)
     loss_type = nn.CrossEntropyLoss()
 
-    epochs = 20
-    for epoch in range(epochs):
+    epochs = 15
+    for epoch in range(1, epochs+1):
         loss_counter = 0
 
         for (X,y) in tqdm(trainLoader, leave=False):
@@ -91,4 +107,14 @@ def robustify(trainData, modelPath=None):
         print("---Epoch %s Complete [PGD]---" % epoch)
         print("PGD Loss: ", meanLoss)
     
-    return model
+        with torch.no_grad():
+            _, valAcc = test(model, evalLoader)
+            print("Validation Accuracy: ", valAcc)
+            print()
+        
+        if epoch == 5:
+            model_5 = model
+        elif epoch == 10:
+            model_10 = model
+    
+    return model_5, model_10, model

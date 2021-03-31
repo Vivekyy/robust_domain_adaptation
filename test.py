@@ -58,9 +58,8 @@ class Tester():
             
             print("Accuracy on USPS is: ", testAccuracy)
 
-def test(model, dataLoader):
+def test(model, dataLoader, loss_type = nn.CrossEntropyLoss()):
     
-    loss_type = nn.CrossEntropyLoss()
     with torch.no_grad():
         testLoss, testAccuracy = runEpoch(model, dataLoader, loss_type)
 
