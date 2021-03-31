@@ -10,13 +10,13 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils, datasets
 
 from train_nr import setDataset
-from utils import GrayscaleToRgb
+from utils import GrayscaleToRgb, setDevice
 from net import Net
 
 # Ignore warnings
-
-# import warnings
 # warnings.filterwarnings("ignore")
+
+device = setDevice()
 
 plt.ion()   # interactive mode
 
@@ -24,7 +24,7 @@ class RelabeledDataset(Dataset):
 
     def __init__(self, datasetPath, modelPath, transform=None):
 
-        self.model = Net()
+        self.model = Net().to(device)
 
         try:
             self.model.load_state_dict(torch.load(modelPath))
@@ -44,9 +44,11 @@ class RelabeledDataset(Dataset):
 
         if self.transform:
             entry_x = self.transform(entry_x)
+        
+        entry_x_dev = entry_x.to(device)
 
         if self.successfulLoad:
-            pred_y = self.model(entry_x.view(-1, 3, 28, 28))
+            pred_y = self.model(entry_x_dev.view(-1, 3, 28, 28))
             entry_y = pred_y.max(1)[1].item()
 
         return entry_x, entry_y

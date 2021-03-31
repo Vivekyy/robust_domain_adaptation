@@ -64,7 +64,7 @@ def robustify(trainData, modelPath=None):
         print("Bad model path [Robustify]")
         return
 
-    trainLoader = DataLoader(trainData, batch_size=50, num_workers=1, pin_memory=True)
+    trainLoader = DataLoader(trainData, batch_size=50, num_workers=0, pin_memory=True)
 
     model.train()
     trainOptim = optim.SGD(model.parameters(), lr=.01)
