@@ -12,7 +12,6 @@ from tqdm import tqdm
 
 from utils import setDevice
 from net import Net
-from test import test
 
 device = setDevice()
 
@@ -69,20 +68,22 @@ def attack_pgd(model, X, y, epsilon=.3, alpha=.01, steps=20):
         
     return best_delta
 
-def robustify(trainData, modelPath=None, customDataset=True):
-    if modelPath is None:
-        modelPath = input("Please input the model path")
+from test import test
 
-    model = Net().to(device)
-    try:
-        model.load_state_dict(torch.load(modelPath))
-    except:
-        print("Bad model path [Robustify]")
-        return
+def robustify(trainData, modelPath=None, model=None, customDataset=True):
+    if modelPath is None and model is None:
+        modelPath = input("Please input the model path")
+    
+    if model is None:
+        model = Net().to(device)
+        try:
+          model.load_state_dict(torch.load(modelPath))
+        except:
+           print("Bad model path [Robustify]")
+           return
 
     trainLoader, evalLoader = makeDataLoaders(trainData, customDataset)
 
-    model.train()
     trainOptim = optim.SGD(model.parameters(), lr=.01)
     loss_type = nn.CrossEntropyLoss()
 
@@ -90,6 +91,8 @@ def robustify(trainData, modelPath=None, customDataset=True):
     for epoch in range(1, epochs+1):
         loss_counter = 0
 
+        
+        model.train()
         for (X,y) in tqdm(trainLoader, leave=False):
             X, y = X.to(device), y.to(device)
             x_pgd = attack_pgd(model, X, y)
@@ -106,7 +109,8 @@ def robustify(trainData, modelPath=None, customDataset=True):
         meanLoss = loss_counter/len(trainLoader)
         print("---Epoch %s Complete [PGD]---" % epoch)
         print("PGD Loss: ", meanLoss)
-    
+
+        model.eval()
         with torch.no_grad():
             _, valAcc = test(model, evalLoader)
             print("Validation Accuracy: ", valAcc)

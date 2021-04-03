@@ -10,6 +10,7 @@ def reset(modelPath = None):
     if modelPath is None:
         modelPath = input("Please enter the path for the model you would like to reset: ")
 
+    #Take out _robust
     resetTarget = modelPath.split('_')[0] + "_" + modelPath.split('_')[1] + "_" + modelPath.split('_')[2] + ".pt"
 
     if os.path.exists(resetTarget):

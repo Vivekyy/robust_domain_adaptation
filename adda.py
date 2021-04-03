@@ -15,11 +15,11 @@ import os
 
 from net import Net
 from test import test
-from train_nr import setDataset
+from train import setDataset
 from utils import setDevice, GrayscaleToRgb, setRequiresGrad
 
 class ADDA():
-    def __init__(self, sourceNetPath, targetAsk = None, robust=False):
+    def __init__(self, sourceNetPath, targetAsk = None, robustOut=False, robustIn=False):
 
         self.device = setDevice()
 
@@ -55,9 +55,14 @@ class ADDA():
 
         self.currentAccuracy = 0
 
-        self.robust = robust
+        self.robust = robustOut
+        self.robustIn = robustIn
         self.targetAsk = targetAsk
 
+        #7 because of models/
+        if sourceNetPath[7]=="r":
+            self.robustIn = True
+        
     def getDatasets(self):
 
         #Get name of dataset from path
@@ -75,6 +80,9 @@ class ADDA():
             self.path = sourceAsk + "_to_" + self.targetAsk + ".pt"
         else:
             self.path = sourceAsk + "_to_" + self.targetAsk + "_robust.pt"
+
+        if self.robustIn:
+            self.path = "r" + self.path
 
         self.sourceDataset = sourceDataset
         self.targetDataset = targetDataset
@@ -174,7 +182,7 @@ class ADDA():
             self.currentAccuracy = valAcc
             torch.save(self.finalNet.state_dict(), "models/" + self.path)
 
-def getPath(sourceNetPath, targetAsk, robust = True):
+def getPath(sourceNetPath, targetAsk, robust = True, robustIn = False):
 
         #Get name of dataset from path
         sourceAsk = sourceNetPath
@@ -185,6 +193,9 @@ def getPath(sourceNetPath, targetAsk, robust = True):
             path = sourceAsk + "_to_" + targetAsk + ".pt"
         else:
             path = sourceAsk + "_to_" + targetAsk + "_robust.pt"
+        
+        if robustIn:
+            path = "r" + path
 
         return path
 

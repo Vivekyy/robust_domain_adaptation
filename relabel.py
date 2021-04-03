@@ -9,12 +9,9 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils, datasets
 
-from train_nr import setDataset
+from train import setDataset
 from utils import GrayscaleToRgb, setDevice
 from net import Net
-
-# Ignore warnings
-# warnings.filterwarnings("ignore")
 
 device = setDevice()
 
