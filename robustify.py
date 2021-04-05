@@ -70,7 +70,7 @@ def attack_pgd(model, X, y, epsilon=.3, alpha=.01, steps=20):
 
 from test import test
 
-def robustify(trainData, modelPath=None, model=None, customDataset=True):
+def robustify(trainData, modelPath=None, model=None, customDataset=True, finalPath=None):
     if modelPath is None and model is None:
         modelPath = input("Please input the model path")
     
@@ -91,7 +91,7 @@ def robustify(trainData, modelPath=None, model=None, customDataset=True):
     for epoch in range(1, epochs+1):
         loss_counter = 0
 
-        
+        bestAcc = 0
         model.train()
         for (X,y) in tqdm(trainLoader, leave=False):
             X, y = X.to(device), y.to(device)
@@ -114,6 +114,31 @@ def robustify(trainData, modelPath=None, model=None, customDataset=True):
         with torch.no_grad():
             _, valAcc = test(model, evalLoader)
             print("Validation Accuracy: ", valAcc)
-            print()
+        
+        if valAcc > bestAcc:
+            if finalPath is not None:
+                print("New Best Accuracy: Saving Epoch ", epoch)
+                torch.save(model.state_dict(), finalPath)
+                bestAcc = valAcc
+        
+        print()
     
     return model
+
+from relabel import RelabeledDataset
+
+if __name__ == "__main__":
+    sourcePath = input("What model would you like to do PGD training on? ")
+    path = sourcePath.split('.')[0]
+    path += "_robust.pt"
+
+    if os.path.exists(path):
+        answer = input("You already have a %s model, would you like to overwrite? (Y/N) " % path)
+        if answer == 'y' or answer == 'Y':
+            baseDataset = input("What dataset would you like to use? ")
+            dataset = RelabeledDataset(baseDataset, sourcePath)
+            robustify(dataset, modelPath=sourcePath, finalPath=path)
+    else:
+        baseDataset = input("What dataset would you like to use? ")
+        dataset = RelabeledDataset(baseDataset, sourcePath)
+        robustify(dataset, modelPath=sourcePath, finalPath=path)

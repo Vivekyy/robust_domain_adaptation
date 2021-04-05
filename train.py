@@ -50,6 +50,8 @@ def runEpoch(model, dataLoader, loss_type, optimizer=None, robust=False):
 
     for x, y_real in tqdm(dataLoader, leave=False):
         x, y_real = x.to(device), y_real.to(device)
+        print(x.size())
+        print(y_real.size())
 
         if robust:
             delta = attack_pgd(model, x, y_real)

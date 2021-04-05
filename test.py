@@ -112,9 +112,14 @@ if __name__ == "__main__":
     tester.SVHN()
     tester.USPS()
 
-    ask = input("Would you like to PGD attack the datasets? (Y/N) ").lower()
-
+    ask = input("Would you like to PGD attack mnist? (Y/N) ").lower()
     if ask == "y":
         tester.MNIST(True)
+    
+    ask = input("Would you like to PGD attack svhn? (Y/N) ").lower()
+    if ask == "y":
         tester.SVHN(True)
+    
+    ask = input("Would you like to PGD attack usps? (Y/N) ").lower()
+    if ask == "y":
         tester.USPS(True)
