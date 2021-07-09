@@ -7,6 +7,8 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from torch.utils.data.sampler import SubsetRandomSampler
 
+from pytorch_metric_learning import losses
+
 import os
 from tqdm import tqdm
 
@@ -85,7 +87,8 @@ def robustify(trainData, modelPath=None, model=None, customDataset=True, finalPa
     trainLoader, evalLoader = makeDataLoaders(trainData, customDataset)
 
     trainOptim = optim.SGD(model.parameters(), lr=.01)
-    loss_type = nn.CrossEntropyLoss()
+    loss_a = nn.CrossEntropyLoss()
+    loss_b = losses.ContrastiveLoss()
 
     epochs = 15
     for epoch in range(1, epochs+1):
@@ -99,7 +102,7 @@ def robustify(trainData, modelPath=None, model=None, customDataset=True, finalPa
 
             trainOptim.zero_grad()
             y_pred = model(x_pgd)
-            loss = loss_type(y_pred, y)
+            loss = loss_a(y_pred, y) + loss_b(y_pred,y)
 
             loss.backward()
             trainOptim.step()

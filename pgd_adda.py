@@ -28,16 +28,19 @@ class ADDA():
 
         sourceNet = Net().to(self.device)
         targetNet = Net().to(self.device)
+        testingNet = Net().to(self.device)
 
         try:
             sourceNet.load_state_dict(torch.load(sourceNetPath))
             targetNet.load_state_dict(torch.load(sourceNetPath))
+            testingNet.load_state_dict(torch.load(sourceNetPath))
             self.successfulLoad = True
         except:
             self.successfulLoad = False
             print("Bad model path [ADDA]")
         
         self.finalNet = sourceNet
+        self.testingNet = testingNet
         self.sourceNet = sourceNet.feature_identifier
         self.targetNet = targetNet.feature_identifier
 
@@ -123,15 +126,17 @@ class ADDA():
                 source_x, source_y = source_x.to(self.device), source_y.to(self.device)
                 target_x, target_y = target_x.to(self.device), target_y.to(self.device)
 
+                """
                 #For using a pgd attack on both datasets during discriminator training
-                self.finalNet.feature_identifier = self.sourceNet
-                delta_s = attack_pgd(self.finalNet, source_x, source_y)
+                self.testingNet.feature_identifier = self.sourceNet
+                delta_s = attack_pgd(self.testingNet, source_x, source_y)
 
-                self.finalNet.feature_identifier = self.targetNet
-                delta_t = attack_pgd(self.finalNet, target_x, target_y)
+                self.testingNet.feature_identifier = self.targetNet
+                delta_t = attack_pgd(self.testingNet, target_x, target_y)
 
                 source_x += delta_s
                 target_x += delta_t
+                """
 
                 sourceFeatures = self.sourceNet(source_x).view(source_x.shape[0], -1)
                 targetFeatures = self.targetNet(target_x).view(target_x.shape[0], -1)
@@ -153,13 +158,15 @@ class ADDA():
             #Train target CNN 10 times for every time you train the discriminator
             setRequiresGrad(self.targetNet, True)
             setRequiresGrad(self.discriminator, False)
-            for _ in range(10):
+            for rep in range(10):
                 (target_x, target_y) = next(target_iter)
                 target_x, target_y = target_x.to(self.device), target_y.to(self.device)
 
-                self.finalNet.feature_identifier = self.targetNet
-                delta = attack_pgd(self.finalNet, target_x, target_y)
-                target_x += delta
+                #PGD attack on targetNet every other iteration
+                if rep % 2 == 0:
+                    self.testingNet.feature_identifier = self.targetNet
+                    delta = attack_pgd(self.testingNet, target_x, target_y)
+                    target_x += delta
                 
                 targetFeatures = self.targetNet(target_x).view(target_x.shape[0], -1)
 
