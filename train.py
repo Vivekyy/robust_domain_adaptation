@@ -9,6 +9,8 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 
+from pytorch_metric_learning import losses
+
 from net import Net
 from utils import GrayscaleToRgb, setDevice
 from robustify import attack_pgd
@@ -48,17 +50,23 @@ def runEpoch(model, dataLoader, loss_type, optimizer=None, robust=False):
     loss_counter = 0
     accuracy_counter = 0
 
+    if robust:
+        loss_a = nn.CrossEntropyLoss()
+        loss_b = losses.ContrastiveLoss(pos_margin=10, neg_margin=10)
+
     for x, y_real in tqdm(dataLoader, leave=False):
         x, y_real = x.to(device), y_real.to(device)
-        print(x.size())
-        print(y_real.size())
 
         if robust:
             delta = attack_pgd(model, x, y_real)
             x += delta
 
         y_pred = model(x)
-        loss = loss_type(y_pred, y_real)
+
+        if not robust:
+            loss = loss_type(y_pred, y_real)
+        else:
+            loss = loss_a(y_pred, y_real) + .01*loss_b(y_pred, y_real)
 
         if optimizer is not None:
             optimizer.zero_grad()
@@ -79,6 +87,7 @@ def main(dataset, path, robust=False):
     model = Net().to(device)
     trainOptim = optim.Adam(model.parameters())
     lr_schedule = torch.optim.lr_scheduler.ReduceLROnPlateau(trainOptim, patience=1, verbose=True)
+    
     loss_type = nn.CrossEntropyLoss()
 
     best_accuracy = 0
@@ -86,6 +95,7 @@ def main(dataset, path, robust=False):
         print("Starting Epoch", epoch)
         model.train()
         trainLoss, trainAcc = runEpoch(model, trainLoader, loss_type, optimizer=trainOptim, robust=robust)
+        print("Training Loss: ", trainLoss)
 
         model.eval()
         with torch.no_grad():

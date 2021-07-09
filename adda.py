@@ -177,10 +177,10 @@ class ADDA():
     
         if valAcc > self.currentAccuracy:
             print("New Best Accuracy: Saving Model")
-            print("Validation Accuracy: ", valAcc)
-            print()
             self.currentAccuracy = valAcc
             torch.save(self.finalNet.state_dict(), "models/" + self.path)
+        print("Validation Accuracy: ", valAcc)
+        print()
 
 def getPath(sourceNetPath, targetAsk, robust = True, robustIn = False):
 
