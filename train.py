@@ -91,7 +91,7 @@ def main(dataset, path, robust=False):
     loss_type = nn.CrossEntropyLoss()
 
     best_accuracy = 0
-    for epoch in range(1, 21):
+    for epoch in range(1, 51):
         print("Starting Epoch", epoch)
         model.train()
         trainLoss, trainAcc = runEpoch(model, trainLoader, loss_type, optimizer=trainOptim, robust=robust)
@@ -110,9 +110,11 @@ def main(dataset, path, robust=False):
             print("PGD Accuracy: ", valAcc)
         """
 
-        if valAcc > best_accuracy:
+        if valAcc > best_accuracy and not robust:
             print("New Best Accuracy: Saving Epoch", epoch)
             best_accuracy = valAcc
+            torch.save(model.state_dict(), "models/" + path)
+        elif robust:
             torch.save(model.state_dict(), "models/" + path)
         print()
 

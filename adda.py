@@ -120,6 +120,7 @@ class ADDA():
             setRequiresGrad(self.targetNet, False)
             setRequiresGrad(self.discriminator, True)
 
+            #Train discriminator
             for _ in range(1):
                 (source_x, _) = next(source_iter)
                 (target_x, _) = next(target_iter)
@@ -134,32 +135,34 @@ class ADDA():
                                         torch.zeros(target_x.shape[0], device=self.device)))
                 discrim_predict = self.discriminator(discrim_x).squeeze()
 
+                self.discrimOptim.zero_grad()
                 discrim_loss = self.LossType(discrim_predict, discrim_real)
 
-                self.discrimOptim.zero_grad()
                 discrim_loss.backward()
                 self.discrimOptim.step()
 
                 loss_counter += discrim_loss.item()
                 accuracy_counter += (discrim_predict.long() == discrim_real.long()).float().mean().item()
 
-            #Train target CNN 10 times for every time you train the discriminator
+            #Train target CNN
             setRequiresGrad(self.targetNet, True)
             setRequiresGrad(self.discriminator, False)
-            for _ in range(10):
+            for _ in range(1):
                 (target_x, _) = next(target_iter)
                 target_x = target_x.to(self.device)
                 
                 targetFeatures = self.targetNet(target_x).view(target_x.shape[0], -1)
 
                 #Trying to fool discriminator
-                discriminator_goal = torch.ones(target_x.shape[0], device=self.device)
-                discrim_predict = self.discriminator(targetFeatures).squeeze()
-
-                discrim_loss = self.LossType(discrim_predict, discriminator_goal)
+                tgt_goal = torch.ones(target_x.shape[0], device=self.device)
+                tgt_predict = self.discriminator(targetFeatures).squeeze()
 
                 self.targetOptim.zero_grad()
-                discrim_loss.backward()
+                self.discrimOptim.zero_grad()
+
+                tgt_loss = self.LossType(tgt_predict, tgt_goal)
+
+                tgt_loss.backward()
                 self.targetOptim.step()
 
         mean_loss = loss_counter/500
@@ -176,9 +179,9 @@ class ADDA():
             _, valAcc = test(self.finalNet, evalDL)
     
         if valAcc > self.currentAccuracy:
-            print("New Best Accuracy: Saving Model")
+            #print("New Best Accuracy: Saving Model")
             self.currentAccuracy = valAcc
-            torch.save(self.finalNet.state_dict(), "models/" + self.path)
+        torch.save(self.finalNet.state_dict(), "models/" + self.path)
         print("Validation Accuracy: ", valAcc)
         print()
 

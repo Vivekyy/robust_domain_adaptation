@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.modules.conv import Conv2d
 
 # Based on https://www.kaggle.com/cdeotte/how-to-choose-cnn-architecture-mnist
 class Net(nn.Module):
@@ -12,13 +13,13 @@ class Net(nn.Module):
             nn.ReLU(),
             nn.Conv2d(32, 64, kernel_size = 5),
             nn.MaxPool2d(2),
-            nn.Dropout2d(p=.4)
+            #nn.Dropout2d(p=.4)
         )
 
         self.classifier = nn.Sequential(
             nn.Linear(1024, 500),
             nn.ReLU(),
-            nn.Dropout(p=.4),
+            #nn.Dropout(p=.4),
             nn.Linear(500, 10)
         )
 

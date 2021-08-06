@@ -33,7 +33,7 @@ def makeDataLoaders(targetDataset, customDataset=True):
 
 #Using norm = infinity
 #alpha = step size
-def attack_pgd(model, X, y, epsilon=.3, alpha=.01, steps=20):
+def attack_pgd(model, X, y, epsilon=.3, alpha=.01, steps=40):
     
     #delta = change to X
     best_loss = torch.zeros(y.shape[0]).to(device)
